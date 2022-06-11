@@ -1,8 +1,10 @@
 type RGBA = [number, number, number, number];
 type MosaicType = "lego" | "spherical" | "flat";
+type ShadowType = "front" | "side" | "none";
 type FillMosaicRectOptions = {
-  shadow?: boolean;
+  shadow?: ShadowType;
   type?: MosaicType;
+  r?: number;
 };
 
 interface FillMosaicRect {
@@ -13,6 +15,6 @@ interface FillMosaicRect {
     y: number,
     w: number,
     h: number,
-    options?: FillMosaicRectOptions
+    r?: number
   ): void;
 }
