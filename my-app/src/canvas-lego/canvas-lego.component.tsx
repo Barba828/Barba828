@@ -1,13 +1,26 @@
-import React, { ChangeEventHandler, FC, useEffect } from "react";
-import { fillLegoRect, toMosaic } from "./utils";
+import React, { FC, useEffect } from "react";
+import { fillLegoRectFactory, toMosaic, mosaicType } from "./utils";
 
 import "./canvas-lego.component.css";
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Slider,
+} from "@mui/material";
 
 export const CanvasToLego: FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const fillLegoRectRef = React.useRef<FillMosaicRect>(fillLegoRectFactory());
+
   const [imgSrc, setImgSrc] = React.useState<string>("");
   const [size, setSize] = React.useState<number>(20);
   const [width, setWidth] = React.useState<number>(800);
+
+  const [type, setType] = React.useState<MosaicType>("lego");
+  const [shadow, setShadow] = React.useState<boolean>(true);
 
   useEffect(() => {
     if (!canvasRef.current) {
@@ -15,60 +28,79 @@ export const CanvasToLego: FC = () => {
     }
     toMosaic(canvasRef.current, {
       imgSrc,
-      fillMosaicRect: fillLegoRect,
+      fillMosaicRect: fillLegoRectRef.current,
       size,
     });
   }, [canvasRef, imgSrc, size, width]);
 
-  const handleChangeFile: ChangeEventHandler<HTMLInputElement> = ({
-    target: { files },
-  }) => {
-    if (!files || !files[0]) {
-      return;
-    }
-    const localUrl = URL.createObjectURL(files[0]);
+  const handleSelectFile = async () => {
+    const arrFileHandle = await (window as any).showOpenFilePicker({
+      types: [
+        {
+          description: "Images",
+          accept: {
+            "image/*": [".png", ".gif", ".jpeg", ".jpg", ".webp"],
+          },
+        },
+      ],
+      // 可以选择多个图片
+      multiple: true,
+    });
+
+    const file = await arrFileHandle[0].getFile();
+    const buffer = await file.arrayBuffer();
+    const localUrl = URL.createObjectURL(new Blob([buffer])); // 转成 Blod url地址
     setImgSrc(localUrl);
   };
 
-  const handleChangeSize: ChangeEventHandler<HTMLInputElement> = ({
-    target: { value },
-  }) => {
-    setSize(Number(value) || 20);
+  const handleChangeSize = (_e: Event, value: number | number[]) => {
+    setSize(value as number);
   };
 
-  const handleChangeWidth: ChangeEventHandler<HTMLInputElement> = ({
-    target: { value },
-  }) => {
-    setWidth(Number(value) || 800);
+  const handleChangeWidth = (_e: Event, value: number | number[]) => {
+    setWidth(value as number);
+  };
+
+  const handleChangeType = ({ target: { value } }: any) => {
+    setType(value as MosaicType);
   };
 
   return (
     <div>
       <div className="lego-input">
-        <input
-          type="file"
-          accept="image/gif,image/jpeg,image/jpg,image/png"
-          onChange={handleChangeFile}
-        />
+        <Button onClick={handleSelectFile}>选择文件</Button>
 
-        <input
-          type="range"
-          id="size"
-          name="size"
-          min={10}
+        <Slider
+          min={20}
           max={100}
-          value={size}
+          defaultValue={40}
+          aria-label="Default"
+          valueLabelDisplay="auto"
           onChange={handleChangeSize}
-        ></input>
-        <input
-          type="range"
-          id="size"
-          name="size"
+        />
+        <Slider
           min={200}
           max={2000}
-          value={width}
+          defaultValue={400}
+          aria-label="Default"
+          valueLabelDisplay="auto"
           onChange={handleChangeWidth}
-        ></input>
+        />
+
+        <FormControl fullWidth>
+          <InputLabel id="demo-simple-select-label">颗粒风格</InputLabel>
+          <Select
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            value={type}
+            label="颗粒风格"
+            onChange={handleChangeType}
+          >
+            <MenuItem value={"lego"}>乐高</MenuItem>
+            <MenuItem value={"spherical"}>球型</MenuItem>
+            <MenuItem value={"flat"}>扁平</MenuItem>
+          </Select>
+        </FormControl>
       </div>
       <canvas ref={canvasRef} id="mosaic" width={width} height={width}></canvas>
       {imgSrc && <img src={imgSrc} alt="pic" width="400" />}

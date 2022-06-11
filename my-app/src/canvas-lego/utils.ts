@@ -37,7 +37,7 @@ export const toMosaic = (
 
   const draw = () => {
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, image.width, image.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
     // 获取图片像素数据后清空 ctx
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -46,12 +46,11 @@ export const toMosaic = (
     for (let i = 0; i < Math.floor(canvas.width / size); i++) {
       for (let j = 0; j < Math.floor(canvas.height / size); j++) {
         // 从马赛克块中随机抽出一个像素点信息
-        const rgba = getPxInfo(
+        let rgba = getPxInfo(
           imageData,
           i * size + Math.floor(Math.random() * size),
           j * size + Math.floor(Math.random() * size)
         );
-
         // 填充马赛克块
         if (fillMosaicRect) {
           fillMosaicRect(ctx, rgba, i * size, j * size, size, size);
@@ -81,36 +80,33 @@ const getPxInfo = (imgData: ImageData, x: number, y: number): RGBA => {
   return color as RGBA;
 };
 
-export const fillLegoRect: FillMosaicRect = (
-  ctx,
-  rgba,
-  x,
-  y,
-  w,
-  h,
-  options = {}
-) => {
-  const { shadow = true, button = "lego" } = options;
-  if (shadow) {
-    setShadows(ctx, rgba, 0, 0, w, h);
-  }
+export const fillLegoRectFactory = (
+  options: FillMosaicRectOptions = {}
+): FillMosaicRect => {
+  const { shadow = true, type = "lego" } = options;
 
-  setRectBackground(ctx, rgba, x, y, w, h);
+  return (ctx, rgba, x, y, w, h) => {
+    if (shadow) {
+      setShadows(ctx, rgba, 0, 0, w, h);
+    }
 
-  switch (button) {
-    case "lego":
-      standardButton(ctx, rgba, x, y, w, h);
-      break;
-    case "spherical":
-      sphericalButton(ctx, rgba, x, y, w, h);
-      break;
-    case "flat":
-      flatButton(ctx, rgba, x, y, w, h);
-      break;
-    default:
-      standardButton(ctx, rgba, x, y, w, h);
-      break;
-  }
+    setRectBackground(ctx, rgba, x, y, w, h);
+
+    switch (type) {
+      case "lego":
+        standardButton(ctx, rgba, x, y, w, h);
+        break;
+      case "spherical":
+        sphericalButton(ctx, rgba, x, y, w, h);
+        break;
+      case "flat":
+        flatButton(ctx, rgba, x, y, w, h);
+        break;
+      default:
+        standardButton(ctx, rgba, x, y, w, h);
+        break;
+    }
+  };
 };
 
 /**
@@ -187,3 +183,5 @@ const flatButton: FillMosaicRect = (ctx, rgba, x, y, w, h) => {
   circle.arc(x + w / 2, y + h / 2, w / 3, 0, 2 * Math.PI);
   ctx.fill(circle);
 };
+
+export const mosaicType: MosaicType[] = ["lego", "spherical", "flat"];
