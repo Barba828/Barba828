@@ -14,8 +14,22 @@
     align-items: flex-start;
 }
 .controller {
+    display: flex;
     width: 100%;
     margin-bottom: 16px !important;
+}
+
+.controller .button {
+    flex: 1;
+}
+
+.controller :first-child {
+    margin-right: 10px;
+}
+
+.canvas-mosaic{
+    overflow: scroll;
+    text-align: start;
 }
 
 /* .card {

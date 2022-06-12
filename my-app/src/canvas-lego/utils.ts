@@ -80,6 +80,11 @@ const getPxInfo = (imgData: ImageData, x: number, y: number): RGBA => {
   return color as RGBA;
 };
 
+/**
+ * 柯里化 通过 options 获取填充马赛克块方法
+ * @param options
+ * @returns
+ */
 export const fillLegoRectFactory = (
   options: FillMosaicRectOptions = {}
 ): FillMosaicRect => {

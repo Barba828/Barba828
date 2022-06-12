@@ -1,6 +1,6 @@
 import React, { FC, useEffect } from "react";
 import { fillLegoRectFactory, toMosaic } from "./utils";
-
+import { useUploader } from "../hooks/use-uploader";
 import "./canvas-lego.component.css";
 import {
   Button,
@@ -13,11 +13,11 @@ import {
   Card,
   Typography,
 } from "@mui/material";
+import { fileSave } from "browser-fs-access";
 
 export const CanvasToLego: FC = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-  const [imgSrc, setImgSrc] = React.useState<string>("");
   const [size, setSize] = React.useState<number>(20);
   const [width, setWidth] = React.useState<number>(800);
   const [radiu, setRadiu] = React.useState<number>(3);
@@ -25,6 +25,7 @@ export const CanvasToLego: FC = () => {
   const [type, setType] = React.useState<MosaicType>("lego");
   const [shadow, setShadow] = React.useState<ShadowType>("front");
 
+  const { src: imgSrc, blob, onOpenFile } = useUploader({});
   useEffect(() => {
     if (!canvasRef.current) {
       return;
@@ -42,26 +43,6 @@ export const CanvasToLego: FC = () => {
       size,
     });
   }, [canvasRef, imgSrc, size, width, type, shadow, radiu]);
-
-  const handleSelectFile = async () => {
-    const arrFileHandle = await (window as any).showOpenFilePicker({
-      types: [
-        {
-          description: "Images",
-          accept: {
-            "image/*": [".png", ".gif", ".jpeg", ".jpg", ".webp"],
-          },
-        },
-      ],
-      // 可以选择多个图片
-      multiple: true,
-    });
-
-    const file = await arrFileHandle[0].getFile();
-    const buffer = await file.arrayBuffer();
-    const localUrl = URL.createObjectURL(new Blob([buffer])); // 转成 Blod url地址
-    setImgSrc(localUrl);
-  };
 
   const handleChangeSize = (_e: Event, value: number | number[]) => {
     setSize(value as number);
@@ -83,17 +64,38 @@ export const CanvasToLego: FC = () => {
     setShadow(target.value as ShadowType);
   };
 
+  const handleDownload = async () => {
+    if (!canvasRef.current) {
+      return;
+    }
+    canvasRef.current.toBlob(async (canvasBlob) => {
+      if (!canvasBlob) {
+        return;
+      }
+
+      await fileSave(canvasBlob, {
+        fileName: `barba${blob?.name}`,
+        extensions: [".png"],
+      });
+    });
+  };
+
   return (
     <div className="lego-container">
       <div className="lego-input">
         <Card sx={{ minWidth: 200 }} className="lego-setting">
-          <Button
-            className="controller"
-            variant="outlined"
-            onClick={handleSelectFile}
-          >
-            选择文件
-          </Button>
+          <div className="controller">
+            <Button className="button" variant="outlined" onClick={onOpenFile}>
+              选择
+            </Button>
+            <Button
+              disabled={!canvasRef.current}
+              className="button"
+              onClick={handleDownload}
+            >
+              保存
+            </Button>
+          </div>
           <FormControl className="controller" fullWidth>
             <InputLabel id="mosaic-type">颗粒风格</InputLabel>
             <Select
@@ -149,16 +151,14 @@ export const CanvasToLego: FC = () => {
         </Card>
         {imgSrc && <img src={imgSrc} alt="pic" height={220} />}
       </div>
-      <canvas ref={canvasRef} id="mosaic" width={width} height={width}></canvas>
-      {/* <Button
-        onClick={() => {
-          console.log(canvasRef!.current!.toDataURL("image/png"));
-
-          window.location = canvasRef!.current!.toDataURL("image/png") as any;
-        }}
-      >
-        xiazai
-      </Button> */}
+      <div className="canvas-mosaic">
+        <canvas
+          ref={canvasRef}
+          id="mosaic"
+          width={width}
+          height={width}
+        ></canvas>
+      </div>
     </div>
   );
 };
